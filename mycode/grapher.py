@@ -1,3 +1,6 @@
+# this file has been modified by authors of evaluation paper for TGL Neurips workshop
+# all changes can be seen via git diff, and are marked with a comment containing "eval_paper_authors"
+
 import json
 import numpy as np
 
@@ -23,11 +26,18 @@ class Grapher(object):
         for relation in self.relation2id_old:
             self.relation2id["_" + relation] = counter  # Inverse relation
             counter += 1
-        self.ts2id = json.load(open(dataset_dir + "ts2id.json"))
-        self.id2entity = dict([(v, k) for k, v in self.entity2id.items()])
-        self.id2relation = dict([(v, k) for k, v in self.relation2id.items()])
-        self.id2ts = dict([(v, k) for k, v in self.ts2id.items()])
-
+        ###  modified "eval_paper_authors" to use unified datasets which do not have the names but directly the ids
+        try:
+            self.ts2id = json.load(open(dataset_dir + "ts2id.json"))
+        except:
+            print('no file ts2id.json')
+        self.id2entity = dict([(int(v), k) for k, v in self.entity2id.items()]) #eval_paper_authors
+        self.id2relation = dict([(int(v), k) for k, v in self.relation2id.items()]) #eval_paper_authors
+        # self.id2entity = dict([(v, k) for k, v in self.entity2id.items()])
+        # self.id2relation = dict([(v, k) for k, v in self.relation2id.items()])
+        # self.id2ts = dict([(v, k) for k, v in self.ts2id.items()])
+        ## end modified eval_paper_authors
+        
         self.inv_relation_id = dict()
         num_relations = len(self.relation2id_old)
         for i in range(num_relations):
@@ -92,10 +102,20 @@ class Grapher(object):
         Returns:
             quads (np.ndarray): indices of quadruples
         """
+        ## modified eval_paper_authors for datasets with ids 
+        # subs =  [self.entity2id[x[0]] for x in quads]
+        # rels = [self.relation2id[x[1]] for x in quads]
+        # objs = [self.entity2id[x[2]] for x in quads]
 
-        subs = [self.entity2id[x[0]] for x in quads]
-        rels = [self.relation2id[x[1]] for x in quads]
-        objs = [self.entity2id[x[2]] for x in quads]
+        subs = [int(x[0]) for x in quads] # [self.entity2id[x[0]] for x in quads]
+        rels = [int(x[1]) for x in quads] #[self.relation2id[x[1]] for x in quads]
+        objs = [int(x[2]) for x in quads] #[self.entity2id[x[2]] for x in quads]
+        # end eval_paper_authors
+
+        ts =  set([x[3] for x in quads])
+        self.ts2id = {tsvalu:int(int(tsvalu)) for tsvalu in ts} #{value: idx for idx, value in enumerate((ts))} #maps ts2indeces
+        self.id2ts = dict([(v, k) for k, v in self.ts2id.items()])
+
         tss = [self.ts2id[x[3]] for x in quads]
         quads = np.column_stack((subs, rels, objs, tss))
 

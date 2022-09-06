@@ -1,3 +1,6 @@
+# this file has been modified by authors of evaluation paper for TGL Neurips workshop
+# all changes can be seen via git diff, and are marked with a comment containing "eval_paper_authors"
+
 import time
 import argparse
 import numpy as np
@@ -16,6 +19,7 @@ parser.add_argument("--num_walks", "-n", default="100", type=int)
 parser.add_argument("--transition_distr", default="exp", type=str)
 parser.add_argument("--num_processes", "-p", default=1, type=int)
 parser.add_argument("--seed", "-s", default=None, type=int)
+parser.add_argument("--runnr", default=0, type=int) # modified eval_paper_authors for logging
 parsed = vars(parser.parse_args())
 
 dataset = parsed["dataset"]
@@ -25,15 +29,17 @@ num_walks = parsed["num_walks"]
 transition_distr = parsed["transition_distr"]
 num_processes = parsed["num_processes"]
 seed = parsed["seed"]
+exp_nr = parsed["runnr"] #eval_paper_authors for logging
 
 dataset_dir = "../data/" + dataset + "/"
+
 data = Grapher(dataset_dir)
 temporal_walk = Temporal_Walk(data.train_idx, data.inv_relation_id, transition_distr)
 rl = Rule_Learner(temporal_walk.edges, data.id2relation, data.inv_relation_id, dataset)
 all_relations = sorted(temporal_walk.edges)  # Learn for all relations
 
 
-def learn_rules(i, num_relations):
+def learn_rules(i, num_relations, seed): # eval_paper_authors added seed
     """
     Learn rules (multiprocessing possible).
 
@@ -45,8 +51,11 @@ def learn_rules(i, num_relations):
         rl.rules_dict (dict): rules dictionary
     """
 
-    if seed:
-        np.random.seed(seed)
+    if seed !=0: # modified eval_paper_authors 
+        np.random.seed(seed) # modified eval_paper_authors 
+    else: # modified eval_paper_authors 
+        seed = "None" # modified eval_paper_authors 
+        print("seed" , seed) # modified eval_paper_authors 
 
     num_rest_relations = len(all_relations) - (i + 1) * num_relations
     if num_rest_relations >= num_relations:
@@ -84,7 +93,7 @@ def learn_rules(i, num_relations):
 start = time.time()
 num_relations = len(all_relations) // num_processes
 output = Parallel(n_jobs=num_processes)(
-    delayed(learn_rules)(i, num_relations) for i in range(num_processes)
+    delayed(learn_rules)(i, num_relations, seed) for i in range(num_processes) # modified eval_paper_authors pass seed 
 )
 end = time.time()
 
@@ -98,7 +107,7 @@ print("Learning finished in {} seconds.".format(total_time))
 rl.rules_dict = all_rules
 rl.sort_rules_dict()
 dt = datetime.now()
-dt = dt.strftime("%d%m%y%H%M%S")
+dt = str(exp_nr) #dt.strftime("%d%m%y%H%M%S") #eval_paper_authors for logging modification
 rl.save_rules(dt, rule_lengths, num_walks, transition_distr, seed)
 rl.save_rules_verbalized(dt, rule_lengths, num_walks, transition_distr, seed)
 rules_statistics(rl.rules_dict)
