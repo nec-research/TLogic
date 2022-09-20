@@ -182,7 +182,7 @@ def apply_rules(i, num_queries):
         currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         # parentdir = os.path.dirname(currentdir)
         sys.path.insert(1, currentdir) 
-        sys.path.insert(1, os.path.join(sys.path[0], '../../..'))        
+        sys.path.insert(1, os.path.join(sys.path[0], '../..'))        
    
         import evaluation_utils 
         num_nodes, num_rels = evaluation_utils.get_total_number(dataset_dir, 'stat.txt')
